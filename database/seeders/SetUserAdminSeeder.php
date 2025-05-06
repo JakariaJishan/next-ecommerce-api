@@ -15,8 +15,8 @@ class SetUserAdminSeeder extends Seeder
     public function run()
     {
         // Admin details
-        $adminEmail = 'dipto@gmail.com';
-        $adminUsername = 'admin_dipto';
+        $adminEmail = 'jakaria@gmail.com';
+        $adminUsername = 'jakaria';
         $adminPhone = '0123456789';
         $adminPassword = '111111';
 
