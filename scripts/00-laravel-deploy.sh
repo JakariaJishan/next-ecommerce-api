@@ -2,6 +2,8 @@
 echo "Running composer"
 composer global require hirak/prestissimo
 composer install --no-dev --working-dir=/var/www/html
+chmod -R 755 storage
+chown -R www-data:www-data storage
 
 echo "Caching config..."
 php artisan config:cache
