@@ -9,5 +9,8 @@ php artisan config:cache
 echo "Caching routes..."
 php artisan route:cache
 
+echo "Symbolink storage..."
+php artisan storage:link
+
 echo "Running migrations..."
 php artisan migrate --force
