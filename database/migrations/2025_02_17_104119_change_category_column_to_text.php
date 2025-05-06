@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('categories', function (Blueprint $table) {
-            $table->json('name')->change();
-            $table->json('description')->change();
+            // $table->json('name')->change();
+            // $table->json('description')->change();
         });
     }
 

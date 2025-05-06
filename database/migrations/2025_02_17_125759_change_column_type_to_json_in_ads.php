@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('ads', function (Blueprint $table) {
-            $table->json('title')->change();
-            $table->json('description')->change();
+            // $table->json('title')->change();
+            // $table->json('description')->change();
         });
     }
 
