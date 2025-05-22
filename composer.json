@@ -6,12 +6,12 @@
     "keywords": ["laravel", "framework"],
     "license": "MIT",
     "require": {
-        "php": "^8.2",
+        "php": "^8.4",
         "ably/ably-php": "^1.1",
         "darkaonline/l5-swagger": "^8.6",
         "dedoc/scramble": "^0.12.10",
         "fakerphp/faker": "^1.23",
-        "laravel/framework": "^11.31",
+        "laravel/framework": "^12.0",
         "laravel/reverb": "^1.0",
         "laravel/sanctum": "^4.0",
         "laravel/scout": "^10.13",
@@ -67,7 +67,7 @@
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#facc15\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"php artisan pail --timeout=0\" \"php artisan reverb:start\" --names=server,queue,logs,reverb"
+            "npx concurrently -c \"#93c5fd,#c4b5fd,#facc15\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"php artisan reverb:start --host=127.0.0.1 --port=6001\" --names=server,queue,reverb"
         ]
     },
     "extra": {
