@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\Ads;
-use App\Models\AdTag;
-use App\Models\AdTagMapping;
+use App\Models\Tag;
+use App\Models\TagMapping;
 use Illuminate\Database\Seeder;
 use App\Models\User;
 use App\Models\Category;
@@ -76,8 +76,8 @@ class AdsSeeder extends Seeder
 
             // Attach tags (mimicking controller logic)
             foreach ($tags as $tagName) {
-                $tag = AdTag::firstOrCreate(['tag_name' => $tagName]);
-                AdTagMapping::create([
+                $tag = Tag::firstOrCreate(['tag_name' => $tagName]);
+                TagMapping::create([
                     'ad_id' => $ad->id,
                     'tag_id' => $tag->id,
                 ]);

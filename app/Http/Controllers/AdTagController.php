@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AdTag;
+use App\Models\Tag;
 use Illuminate\Http\Request;
 
 class AdTagController extends Controller
@@ -34,7 +34,7 @@ class AdTagController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(AdTag $adTag)
+    public function show(Tag $adTag)
     {
         //
     }
@@ -42,7 +42,7 @@ class AdTagController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(AdTag $adTag)
+    public function edit(Tag $adTag)
     {
         //
     }
@@ -50,7 +50,7 @@ class AdTagController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, AdTag $adTag)
+    public function update(Request $request, Tag $adTag)
     {
         //
     }
@@ -58,7 +58,7 @@ class AdTagController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(AdTag $adTag)
+    public function destroy(Tag $adTag)
     {
         //
     }

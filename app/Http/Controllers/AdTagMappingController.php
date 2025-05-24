@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AdTagMapping;
+use App\Models\TagMapping;
 use Illuminate\Http\Request;
 
 class AdTagMappingController extends Controller
@@ -34,7 +34,7 @@ class AdTagMappingController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(AdTagMapping $adTagMapping)
+    public function show(TagMapping $adTagMapping)
     {
         //
     }
@@ -42,7 +42,7 @@ class AdTagMappingController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(AdTagMapping $adTagMapping)
+    public function edit(TagMapping $adTagMapping)
     {
         //
     }
@@ -50,7 +50,7 @@ class AdTagMappingController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, AdTagMapping $adTagMapping)
+    public function update(Request $request, TagMapping $adTagMapping)
     {
         //
     }
@@ -58,7 +58,7 @@ class AdTagMappingController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(AdTagMapping $adTagMapping)
+    public function destroy(TagMapping $adTagMapping)
     {
         //
     }
