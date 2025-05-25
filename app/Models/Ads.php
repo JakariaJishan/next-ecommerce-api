@@ -54,12 +54,12 @@ class Ads extends Model implements HasMedia
 
     public function tagMappings(): HasMany
     {
-        return $this->hasMany(AdTagMapping::class, 'ad_id');
+        return $this->hasMany(TagMapping::class, 'ad_id');
     }
 
     public function tags(): BelongsToMany
     {
-        return $this->belongsToMany(AdTag::class, 'ad_tag_mappings', 'ad_id', 'tag_id');
+        return $this->belongsToMany(Tag::class, 'ad_tag_mappings', 'ad_id', 'tag_id');
     }
 
     public function reports(): HasMany

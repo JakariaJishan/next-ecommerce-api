@@ -69,6 +69,11 @@ class User extends Authenticatable implements HasMedia
         return $this->hasMany(Ads::class);
     }
 
+    public function products(): HasMany
+    {
+        return $this->hasMany(Product::class);
+    }
+
     public function blogPosts(): HasMany
     {
         return $this->hasMany(BlogPost::class, 'author_id', 'id');

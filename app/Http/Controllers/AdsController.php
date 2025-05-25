@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Helpers\TranslationHelper;
 use App\Models\Ads;
-use App\Models\AdTag;
-use App\Models\AdTagMapping;
+use App\Models\Tag;
+use App\Models\TagMapping;
 use App\Services\ApiResponseService;
 use App\Services\FilterService;
 use Illuminate\Http\Request;
@@ -131,8 +131,8 @@ class AdsController extends Controller
             // ✅ Handle Tags: Create new tags if they don't exist, then attach them to the ad
             if (!empty($tags)) {
                 foreach ($tags as $tagName) {
-                    $tag = AdTag::firstOrCreate(['tag_name' => $tagName]);
-                    AdTagMapping::create([
+                    $tag = Tag::firstOrCreate(['tag_name' => $tagName]);
+                    TagMapping::create([
                         'ad_id' => $ad->id,
                         'tag_id' => $tag->id,
                     ]);

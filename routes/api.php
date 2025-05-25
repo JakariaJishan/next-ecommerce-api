@@ -11,6 +11,7 @@ use App\Http\Controllers\ContestEntryVoteController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SearchController;
@@ -81,6 +82,9 @@ Route::resource('categories', CategoryController::class)->except(['create', 'edi
 
 //ads routes
 Route::resource('ads', AdsController::class)->except(['create', 'edit']);
+
+//products routes
+Route::resource('products', ProductController::class)->except(['create', 'edit']);
 
 //blog posts routes
 Route::resource('blog-posts', BlogPostController::class)->except(['create', 'edit']);

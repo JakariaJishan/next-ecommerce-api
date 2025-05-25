@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\TagMapping;
+use App\Models\Inventory;
 use Illuminate\Http\Request;
 
-class AdTagMappingController extends Controller
+class InventoryController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -34,7 +34,7 @@ class AdTagMappingController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(TagMapping $adTagMapping)
+    public function show(Inventory $inventory)
     {
         //
     }
@@ -42,7 +42,7 @@ class AdTagMappingController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(TagMapping $adTagMapping)
+    public function edit(Inventory $inventory)
     {
         //
     }
@@ -50,7 +50,7 @@ class AdTagMappingController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, TagMapping $adTagMapping)
+    public function update(Request $request, Inventory $inventory)
     {
         //
     }
@@ -58,7 +58,7 @@ class AdTagMappingController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(TagMapping $adTagMapping)
+    public function destroy(Inventory $inventory)
     {
         //
     }
