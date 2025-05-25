@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Laravel\Scout\Searchable;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -38,6 +39,11 @@ class Product extends Model implements HasMedia
         'height' => 'decimal:2',
     ];
 
+    public function getMediaDirectory(): string
+    {
+        return 'uploads/' . config('app.name') . '/products'; // or dynamically use $this->id
+    }
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
@@ -51,6 +57,11 @@ class Product extends Model implements HasMedia
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function inventory(): HasOne
+    {
+        return $this->hasOne(Inventory::class);
     }
 
 }

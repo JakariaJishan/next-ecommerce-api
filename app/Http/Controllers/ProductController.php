@@ -2,15 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Inventory;
 use App\Models\Tag;
 use App\Models\TagMapping;
 use App\Models\Product;
+use App\Notifications\LowStockNotification;
 use App\Services\ApiResponseService;
 use App\Services\FilterService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -44,7 +48,7 @@ class ProductController extends Controller
 
             // Handle pagination
             $perPage = $request->get('per_page', 10);
-            $perPage = is_numeric($perPage) && $perPage > 0 ? (int) $perPage : 10;
+            $perPage = is_numeric($perPage) && $perPage > 0 ? (int)$perPage : 10;
             $products = $query->paginate($perPage);
 
             // Check if there are no products
@@ -70,11 +74,9 @@ class ProductController extends Controller
             $user = Auth::guard('sanctum')->user();
 
             if (!$user) {
-                return apiResponse(false, 'Unauthorized: You must be logged in to create products.', [], null);
+                return apiResponse(false, 'Unauthorized: You must be logged in to create products.',
+                    [], null, 401);
             }
-//            if (!$user->hasRole('user')) {
-//                return apiResponse(false, 'Unauthorized: You must have the user role and ads_create permission.', [], null);
-//            }
 
             // Validate the incoming data
             $validated = $request->validate([
@@ -92,54 +94,79 @@ class ProductController extends Controller
                 'media.*' => 'file|mimes:jpg,jpeg,png,mp4,mov,avi|max:5120',
                 'tags' => 'required|array',
                 'tags.*' => 'required|string|max:255',
+                'stock_quantity' => 'nullable|integer|min:0',
+                'low_stock_threshold' => 'nullable|integer|min:0',
             ]);
 
-            // Handle tags input (already validated as an array)
-            $tags = Arr::wrap($request->input('tags'));
+            // Wrap all database operations in a transaction
+            $product = DB::transaction(function () use ($request, $validated, $user) {
+                // Handle tags input
+                $tags = Arr::wrap($request->input('tags'));
 
-            // Create the product
-            $product = Product::create([
-                'user_id' => $user->id,
-                'category_id' => $validated['category_id'],
-                'name' => $validated['name'],
-                'description' => $validated['description'],
-                'sku' => $validated['sku'],
-                'price' => $validated['price'],
-                'weight' => $validated['weight'],
-                'length' => $validated['length'],
-                'width' => $validated['width'],
-                'height' => $validated['height'],
-//                'custom_attributes' => $validated['custom_attributes'],
-            ]);
+                // Create the product
+                $product = Product::create([
+                    'user_id' => $user->id,
+                    'category_id' => $validated['category_id'],
+                    'name' => $validated['name'],
+                    'description' => $validated['description'],
+                    'sku' => $validated['sku'],
+                    'price' => $validated['price'],
+                    'weight' => $validated['weight'],
+                    'length' => $validated['length'],
+                    'width' => $validated['width'],
+                    'height' => $validated['height'],
+                ]);
 
-            // Handle media uploads
-            if ($request->hasFile('media')) {
-                foreach ($request->file('media') as $file) {
-                    $product->addMedia($file)->toMediaCollection('product');
+                // Create inventory record
+                $inventory = Inventory::create([
+                    'product_id' => $product->id,
+                    'stock_quantity' => $validated['stock_quantity'] ?? 0,
+                    'low_stock_threshold' => $validated['low_stock_threshold'] ?? 10,
+                ]);
+
+
+                // Handle media uploads
+                $mediaPaths = [];
+                if ($request->hasFile('media')) {
+                    foreach ($request->file('media') as $file) {
+                        $media = $product->addMedia($file)->toMediaCollection('product');
+                        $mediaPaths[] = $media->getPath();
+                    }
                 }
-            }
 
-            // Handle tags: Create or find tags and attach them to the product
-            if (!empty($tags)) {
-                $tagIds = [];
-                foreach ($tags as $tagName) {
-                    $tag = Tag::firstOrCreate(
-                        ['tag_name' => $tagName],
-                        ['tag_description' => 'Tag description']
-                    );
-                    $tagIds[$tag->id] = [
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ];
+                // Handle tags: Create or find tags and attach them to the product
+                if (!empty($tags)) {
+                    $tagIds = [];
+                    foreach ($tags as $tagName) {
+                        $tag = Tag::firstOrCreate(
+                            ['tag_name' => $tagName],
+                            ['tag_description' => 'Tag description']
+                        );
+                        $tagIds[$tag->id] = [
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ];
+                    }
+                    $product->tags()->sync($tagIds);
                 }
-                $product->tags()->sync($tagIds);
-            }
 
-            // Return success response with product, media, and tags
+                return [$product, $mediaPaths];
+            });
+
+            // Extract product and media paths from transaction result
+            [$product, $mediaPaths] = $product;
+
+            // Return success response with product, inventory, media, and tags
             return apiResponse(true, 'Product created successfully!',
-                $product->load('user.media', 'media', 'tags'), 'products');
-
+                $product->load('user.media', 'media', 'tags', 'inventory'), 'products', 201);
         } catch (\Exception $e) {
+            // Clean up any uploaded media files if transaction fails
+            if (isset($mediaPaths)) {
+                foreach ($mediaPaths as $path) {
+                    Storage::delete($path);
+                }
+            }
+
             return ApiResponseService::handleException($e, $request->all());
         }
     }
@@ -151,20 +178,19 @@ class ProductController extends Controller
     public function show($id)
     {
         try {
-            // Fetch the ad with user and media
-            $ad = Product::with(['user.media', 'media'])->where('id', $id)->first();
+            // Fetch the product with user, media, and inventory
+            $product = Product::with(['user.media', 'media', 'inventory'])->where('id', $id)->first();
 
-            if (!$ad) {
-                return apiResponse(false, 'Product not found.', [], 'product');
+            if (!$product) {
+                return apiResponse(false, 'Product not found.', [], 'product', 404);
             }
 
-            return apiResponse(true, 'Product retrieved successfully.', $ad, 'product');
+            return apiResponse(true, 'Product retrieved successfully.', $product, 'product', 200);
         } catch (\Exception $e) {
             return apiResponse(false, 'An error occurred while retrieving the product.',
-                $e->getMessage(), 'error');
+                $e->getMessage(), 'error', 500);
         }
     }
-
 
 
     /**
@@ -177,18 +203,19 @@ class ProductController extends Controller
             $user = Auth::guard('sanctum')->user();
 
             if (!$user) {
-                return apiResponse(false, 'Unauthorized: You must be logged in to update products.', [], null);
+                return apiResponse(false, 'Unauthorized: You must be logged in to update products.', [], null, 401);
             }
 
+            // Fetch the product
             $product = Product::where('id', $id)->first();
 
             if (!$product) {
-                return apiResponse(false, 'Product not found.', [], null);
+                return apiResponse(false, 'Product not found.', [], null, 404);
             }
 
             // Check if the user owns the product
             if ($user->id !== $product->user_id) {
-                return apiResponse(false, 'You are not the owner of this product.', [], null);
+                return apiResponse(false, 'You are not the owner of this product.', [], null, 403);
             }
 
             // Validate the incoming data
@@ -201,7 +228,6 @@ class ProductController extends Controller
                     'required',
                     'string',
                     'max:50',
-                    // Custom rule to check uniqueness only if SKU is different from current
                     function ($attribute, $value, $fail) use ($product) {
                         if ($value !== $product->sku && Product::where('sku', $value)->where('id', '!=', $product->id)->exists()) {
                             $fail('The SKU has already been taken.');
@@ -219,49 +245,96 @@ class ProductController extends Controller
                 'delete_media' => 'nullable|array',
                 'tags' => 'nullable|array',
                 'tags.*' => 'string|max:255',
+                'stock_quantity' => 'sometimes|required|integer|min:0',
+                'low_stock_threshold' => 'sometimes|required|integer|min:0',
             ]);
 
-            // Update product fields
-            $product->update($validatedData);
+            // Wrap all database operations in a transaction
+            $product = DB::transaction(function () use ($request, $validatedData, $product, $user) {
+                // Update product fields
+                $product->update($validatedData);
 
-            // Handle deleting selected media files
-            if ($request->has('delete_media')) {
-                foreach ($request->delete_media as $mediaId) {
-                    $media = $product->media()->where('id', $mediaId)->first();
-                    if ($media) {
-                        $media->delete(); // Delete media from storage and database
+                // Handle inventory update
+                $inventory = $product->inventory;
+                if ($request->hasAny(['stock_quantity', 'low_stock_threshold'])) {
+                    if (!$inventory) {
+                        // Create inventory if it doesn't exist (unlikely due to store method)
+                        $inventory = Inventory::create([
+                            'product_id' => $product->id,
+                            'stock_quantity' => $validatedData['stock_quantity'] ?? 0,
+                            'low_stock_threshold' => $validatedData['low_stock_threshold'] ?? 10,
+                        ]);
+                    } else {
+                        // Check for low stock before updating
+                        $wasLowStock = $inventory->stock_quantity <= $inventory->low_stock_threshold;
+                        $newStock = $request->input('stock_quantity', $inventory->stock_quantity);
+                        $newThreshold = $request->input('low_stock_threshold', $inventory->low_stock_threshold);
+
+                        // Update inventory
+                        $inventory->update([
+                            'stock_quantity' => $newStock,
+                            'low_stock_threshold' => $newThreshold,
+                        ]);
+
+                        // Trigger low-stock alert if necessary
+                        if (!$wasLowStock && $newStock <= $newThreshold) {
+                            $product->user->notify(new LowStockNotification($inventory));
+                        }
                     }
                 }
-            }
 
-            // Handle new media uploads
-            if ($request->hasFile('media')) {
-                foreach ($request->file('media') as $file) {
-                    $product->addMedia($file)->toMediaCollection('product');
+                // Handle deleting selected media files
+                if ($request->has('delete_media')) {
+                    foreach ($request->delete_media as $mediaId) {
+                        $media = $product->media()->where('id', $mediaId)->first();
+                        if ($media) {
+                            $media->delete();
+                        }
+                    }
                 }
-            }
 
-            // Handle tags: Sync new tags if provided
-            if ($request->has('tags')) {
-                $tags = Arr::wrap($request->input('tags'));
-                $tagIds = [];
-                foreach ($tags as $tagName) {
-                    $tag = Tag::firstOrCreate(
-                        ['tag_name' => $tagName],
-                        ['tag_description' => 'Tag description']
-                    );
-                    $tagIds[$tag->id] = [
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ];
+                // Handle new media uploads
+                $mediaPaths = [];
+                if ($request->hasFile('media')) {
+                    foreach ($request->file('media') as $file) {
+                        $media = $product->addMedia($file)->toMediaCollection('product');
+                        $mediaPaths[] = $media->getPath();
+                    }
                 }
-                $product->tags()->sync($tagIds);
-            }
 
+                // Handle tags: Sync new tags if provided
+                if ($request->has('tags')) {
+                    $tags = Arr::wrap($request->input('tags'));
+                    $tagIds = [];
+                    foreach ($tags as $tagName) {
+                        $tag = Tag::firstOrCreate(
+                            ['tag_name' => $tagName],
+                            ['tag_description' => 'Tag description']
+                        );
+                        $tagIds[$tag->id] = [
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ];
+                    }
+                    $product->tags()->sync($tagIds);
+                }
+
+                return [$product, $mediaPaths];
+            });
+
+            // Extract product and media paths from transaction result
+            [$product, $mediaPaths] = $product;
+
+            // Return success response with product, inventory, media, and tags
             return apiResponse(true, 'Product updated successfully.',
-                $product->load('user.media', 'media', 'tags'), 'products');
-
+                $product->load('user.media', 'media', 'tags', 'inventory'), 'products', 200);
         } catch (\Exception $e) {
+            // Clean up any uploaded media files if transaction fails
+            if (isset($mediaPaths)) {
+                foreach ($mediaPaths as $path) {
+                    Storage::delete($path);
+                }
+            }
             return ApiResponseService::handleException($e, $request->all());
         }
     }
