@@ -108,4 +108,9 @@ class User extends Authenticatable implements HasMedia
     {
         return $this->hasMany(ContestEntryVote::class, 'user_id');
     }
+
+    public function cart(): HasOne
+    {
+        return $this->hasOne(Cart::class);
+    }
 }

@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BlogPostController;
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ContestController;
 use App\Http\Controllers\ContestEntryController;
@@ -133,3 +134,16 @@ Route::get('dashboards/top-sold-ads', [DashboardController::class, 'topSoldAds']
 //notifications routes
 Route::resource('notifications', NotificationController::class)->except(['create', 'edit']);
 Route::post('notifications/mark-all-as-read', [NotificationController::class, 'markAllAsRead']);
+
+//carts routes
+Route::prefix('cart')->group(function () {
+    Route::get('/', [CartController::class, 'index']);
+    // Add product to cart
+    Route::post('/add-to-cart/{product_id}', [CartController::class, 'addToCart']);
+
+    // Remove product from cart
+    Route::delete('/remove-from-cart/{cart_id}/{product_id}', [CartController::class, 'removeFromCart']);
+
+    Route::patch('/{cart_id}/increase/{cart_item_id}', [CartController::class, 'increaseQuantity']);
+    Route::patch('/{cart_id}/decrease/{cart_item_id}', [CartController::class, 'decreaseQuantity']);
+});
