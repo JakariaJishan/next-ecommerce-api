@@ -34,7 +34,7 @@ class SetUserAdminSeeder extends Seeder
             // Create the admin user
             $user = User::create([
                 'email' => $adminEmail,
-                'username' => $adminUsername,
+                'full_name' => $adminUsername,
                 'phone' => $adminPhone,
                 'password' => Hash::make($adminPassword), // Securely hash the password
                 'email_verified_at' => now(), // Mark email as verified

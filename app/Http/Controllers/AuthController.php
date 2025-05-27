@@ -30,7 +30,7 @@ class AuthController extends Controller
         try {
             // Validate user inputs
             $fields = $request->validate([
-                'username' => 'required|string|max:10|unique:users',
+                'full_name' => 'required|string|max:20',
                 'email' => 'required|string|email|max:255|unique:users',
                 'password' => 'required|string|min:6|confirmed',
                 'phone' => 'nullable|string|unique:users',
@@ -39,7 +39,7 @@ class AuthController extends Controller
 
             // Create the user
             $user = User::create([
-                'username' => $fields['username'],
+                'full_name' => $fields['full_name'],
                 'email' => $fields['email'],
                 'password' => Hash::make($fields['password']),
             ]);
@@ -128,7 +128,7 @@ class AuthController extends Controller
             }
 
             // ✅ If no 2FA is enabled, generate a token and store session
-            $token = $user->createToken($user->username);
+            $token = $user->createToken($user->email);
             $expiresAt = Carbon::now()->addDays(7);
 
             // Update the latest token's expiration
@@ -159,7 +159,7 @@ class AuthController extends Controller
                     'email_verified_at' => $user->email_verified_at,
                     'created_at' => $user->created_at,
                     'updated_at' => $user->updated_at,
-                    'username' => $user->username,
+                    'full_name' => $user->full_name,
                     'phone' => $user->phone,
                     'avatar' => $user->avatar,
                     'bio' => $user->bio,
@@ -300,12 +300,12 @@ class AuthController extends Controller
                 // Update Google ID and other details if the user exists
                 $user->update([
                     'google_id' => $googleUser->getId(),
-                    'username' => $googleUser->getName() ?? $user->username, // Optional: Update name if needed
+                    'full_name' => $googleUser->getName() ?? $user->full_name, // Optional: Update name if needed
                 ]);
             } else {
                 // Create new user if no matching email is found
                 $user = User::create([
-                    'username' => $googleUser->getName() ?? explode('@', $googleUser->getEmail())[0], // Fallback to email prefix
+                    'full_name' => $googleUser->getName() ?? explode('@', $googleUser->getEmail())[0], // Fallback to email prefix
                     'email' => $googleUser->getEmail(),
                     'google_id' => $googleUser->getId(),
                     'password' => bcrypt(uniqid()), // Random password for new users
@@ -313,7 +313,7 @@ class AuthController extends Controller
             }
 
             // Create a Sanctum token
-            $token = $user->createToken($user->username);
+            $token = $user->createToken($user->email);
             $expiresAt = Carbon::now()->addDays(7);
 
             $latestToken = $user->tokens()->latest()->first();
@@ -812,7 +812,7 @@ class AuthController extends Controller
             }
 
             // ✅ If 2FA is correct, issue the access token
-            $token = $user->createToken($user->username);
+            $token = $user->createToken($user->email);
             $expiresAt = Carbon::now()->addDays(7);
 
             $latestToken = $user->tokens()->latest()->first();
@@ -841,7 +841,7 @@ class AuthController extends Controller
                     'email_verified_at' => $user->email_verified_at,
                     'created_at' => $user->created_at,
                     'updated_at' => $user->updated_at,
-                    'username' => $user->username,
+                    'full_name' => $user->full_name,
                     'phone' => $user->phone,
                     'avatar' => $user->avatar,
                     'bio' => $user->bio,
@@ -910,7 +910,7 @@ class AuthController extends Controller
             $user->save();
 
             // Generate a login token
-            $token = $user->createToken($user->username);
+            $token = $user->createToken($user->email);
             $expiresAt = Carbon::now()->addDays(7);
 
             $latestToken = $user->tokens()->latest()->first();
@@ -938,7 +938,7 @@ class AuthController extends Controller
                     'email_verified_at' => $user->email_verified_at,
                     'created_at' => $user->created_at,
                     'updated_at' => $user->updated_at,
-                    'username' => $user->username,
+                    'full_name' => $user->full_name,
                     'phone' => $user->phone,
                     'avatar' => $user->avatar,
                     'bio' => $user->bio,

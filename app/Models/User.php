@@ -113,4 +113,9 @@ class User extends Authenticatable implements HasMedia
     {
         return $this->hasOne(Cart::class);
     }
+
+    public function addresses()
+    {
+        return $this->hasMany(Address::class);
+    }
 }
