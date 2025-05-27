@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AddressController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdsController;
 use App\Http\Controllers\AuthController;
@@ -147,3 +148,16 @@ Route::prefix('cart')->group(function () {
     Route::patch('/{cart_id}/increase/{cart_item_id}', [CartController::class, 'increaseQuantity']);
     Route::patch('/{cart_id}/decrease/{cart_item_id}', [CartController::class, 'decreaseQuantity']);
 });
+
+//addresses routes
+// Save both billing and shipping addresses
+Route::post('/checkout/addresses', [AddressController::class, 'store']);
+
+// (Optional) Retrieve previously used addresses by the user
+Route::get('/checkout/addresses', [AddressController::class, 'index']);
+
+// (Optional) Update address before confirming order
+Route::patch('/checkout/addresses/{id}', [AddressController::class, 'update']);
+
+// (Optional) Delete address (e.g., from checkout if user wants to remove it)
+Route::delete('/checkout/addresses/{id}', [AddressController::class, 'destroy']);
