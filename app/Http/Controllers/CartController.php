@@ -28,7 +28,7 @@ class CartController extends Controller
             ->first();
 
         if (!$cart) {
-            return apiResponse(true, 'No cart found for this user.', ['cart' => null], null, 200);
+            return apiResponse(true, 'No cart found for this user.', [], null, 200);
         }
 
         return apiResponse(true, 'Cart retrieved successfully.', ['cart' => $cart], null, 200);

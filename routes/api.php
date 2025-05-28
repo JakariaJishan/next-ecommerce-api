@@ -12,6 +12,7 @@ use App\Http\Controllers\ContestEntryController;
 use App\Http\Controllers\ContestEntryVoteController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ReportController;
@@ -150,14 +151,19 @@ Route::prefix('cart')->group(function () {
 });
 
 //addresses routes
-// Save both billing and shipping addresses
 Route::post('/checkout/addresses', [AddressController::class, 'store']);
 
-// (Optional) Retrieve previously used addresses by the user
 Route::get('/checkout/addresses', [AddressController::class, 'index']);
 
-// (Optional) Update address before confirming order
 Route::patch('/checkout/addresses/{id}', [AddressController::class, 'update']);
 
-// (Optional) Delete address (e.g., from checkout if user wants to remove it)
 Route::delete('/checkout/addresses/{id}', [AddressController::class, 'destroy']);
+
+// Orders routes
+Route::get('/orders', [OrderController::class, 'index']);
+Route::get('/order/{order_id}', [OrderController::class, 'show']);
+Route::post('/orders', [OrderController::class, 'store']);
+//Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel']);
+
+// Payments
+//Route::post('/orders/{order}/pay', [PaymentController::class, 'pay']);
