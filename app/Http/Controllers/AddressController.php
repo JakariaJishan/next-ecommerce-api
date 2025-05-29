@@ -142,7 +142,6 @@ class AddressController extends Controller
                 'country' => 'sometimes|required|string',
                 'phone' => 'nullable|string',
             ]);
-
             // Step 4: Update the address
             $address->update($validated);
 
