@@ -123,4 +123,9 @@ class User extends Authenticatable implements HasMedia
     {
         return $this->hasMany(Order::class);
     }
+
+    public function wishLists(): HasMany
+    {
+        return $this->hasMany(WishList::class);
+    }
 }

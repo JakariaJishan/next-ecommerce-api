@@ -68,4 +68,10 @@ class Product extends Model implements HasMedia
         return $this->hasMany(CartItem::class);
     }
 
+    public function wishLists(): HasMany
+    {
+        return $this->hasMany(WishList::class);
+    }
+
+
 }

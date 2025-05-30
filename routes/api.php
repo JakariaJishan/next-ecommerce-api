@@ -20,6 +20,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SearchHistoryController;
 use App\Http\Controllers\SellerInfoController;
+use App\Http\Controllers\WishListController;
 use App\Models\User;
 use App\Services\NotificationService;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
@@ -167,3 +168,8 @@ Route::post('/orders', [OrderController::class, 'store']);
 
 // Payments
 //Route::post('/orders/{order}/pay', [PaymentController::class, 'pay']);
+
+//wishlist routes
+Route::post('/wishlist', [WishlistController::class, 'store']);
+Route::get('/wishlists', [WishlistController::class, 'index']);
+Route::delete('/wishlist/{product_id}', [WishlistController::class, 'destroy']);
