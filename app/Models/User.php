@@ -28,7 +28,8 @@ class User extends Authenticatable implements HasMedia
      * @var list<string>
      */
     protected $fillable = [
-        'name',
+        'first_name',
+        'last_name',
         'email',
         'password',
         'bio',
@@ -36,6 +37,8 @@ class User extends Authenticatable implements HasMedia
         'phone',
         'avatar',
         'google_id',
+        'gender',
+        'date_of_birth',
     ];
 
     /**
@@ -61,6 +64,7 @@ class User extends Authenticatable implements HasMedia
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'date_of_birth' => 'datetime',
         ];
     }
 
@@ -132,5 +136,10 @@ class User extends Authenticatable implements HasMedia
     public function paymentMethods()
     {
         return $this->hasMany(PaymentMethod::class);
+    }
+
+    public function userNotifications(): Hasone
+    {
+        return $this->hasOne(UserNotification::class);
     }
 }

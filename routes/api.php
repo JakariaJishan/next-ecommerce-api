@@ -184,3 +184,5 @@ Route::delete('/payment-method/{payment_method_id}', [PaymentMethodController::c
 
 //user(my account) account routes
 Route::get('/account-overview', [UserAccountController::class, 'accountOverView']);
+Route::patch('/account-overview-update-user-info', [UserAccountController::class, 'updateUserInfo']);
+Route::patch('/account-overview-update-user-notification', [UserAccountController::class, 'updateUserNotification']);
