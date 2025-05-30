@@ -13,6 +13,7 @@ use App\Http\Controllers\ContestEntryVoteController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ReportController;
@@ -20,6 +21,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SearchHistoryController;
 use App\Http\Controllers\SellerInfoController;
+use App\Http\Controllers\UserAccountController;
 use App\Http\Controllers\WishListController;
 use App\Models\User;
 use App\Services\NotificationService;
@@ -173,3 +175,12 @@ Route::post('/orders', [OrderController::class, 'store']);
 Route::post('/wishlist', [WishlistController::class, 'store']);
 Route::get('/wishlists', [WishlistController::class, 'index']);
 Route::delete('/wishlist/{product_id}', [WishlistController::class, 'destroy']);
+
+//payment methods routes
+Route::get('/payment-methods', [PaymentMethodController::class, 'index']);
+Route::post('/payment-method', [PaymentMethodController::class, 'store']);
+Route::patch('/payment-method/{payment_method_id}', [PaymentMethodController::class, 'update']);
+Route::delete('/payment-method/{payment_method_id}', [PaymentMethodController::class, 'destroy']);
+
+//user(my account) account routes
+Route::get('/account-overview', [UserAccountController::class, 'accountOverView']);

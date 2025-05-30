@@ -128,4 +128,9 @@ class User extends Authenticatable implements HasMedia
     {
         return $this->hasMany(WishList::class);
     }
+
+    public function paymentMethods()
+    {
+        return $this->hasMany(PaymentMethod::class);
+    }
 }

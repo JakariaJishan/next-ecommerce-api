@@ -13,7 +13,7 @@ class WishListController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         try {
             // Get the authenticated user
@@ -23,13 +23,28 @@ class WishListController extends Controller
                 return apiResponse(false, 'Unauthorized: You must be logged in.', [], null);
             }
 
+            // Validate query parameters
+            $request->validate([
+                'per_page' => 'nullable|integer|min:1|max:100',
+            ]);
+
             // Fetch the user's wishlist with products and their media
-            $wishLists = $user->wishLists()->with(['product' => function ($query) {
-                $query->with('media');
-            }])->get();
+            $perPage = $request->get('per_page', 10);
+            $perPage = is_numeric($perPage) && $perPage > 0 ? (int)$perPage : 10;
+            $wishLists = $user->wishLists()
+                ->with(['product' => function ($query) {
+                    $query->with('media');
+                }])
+                ->paginate($perPage);
 
-            return apiResponse(true, 'Wishlist retrieved successfully!', $wishLists, 'wish_lists');
+            // Check if there are no wishlist items
+            if ($wishLists->isEmpty()) {
+                return apiResponse(true, 'No wishlist items found.', ['wish_lists' => $wishLists],
+                    'wish_lists', 200);
+            }
 
+            return apiResponse(true, 'Wishlist retrieved successfully!', ['wish_lists' => $wishLists],
+                'wish_lists', 200);
         } catch (\Exception $e) {
             return ApiResponseService::handleException($e, []);
         }
