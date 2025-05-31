@@ -142,4 +142,19 @@ class User extends Authenticatable implements HasMedia
     {
         return $this->hasOne(UserNotification::class);
     }
+
+    public function languagePreferences(): HasOne
+    {
+        return $this->hasOne(LanguagePreference::class);
+    }
+
+    public function currencyPreferences(): HasOne
+    {
+        return $this->hasOne(CurrencyPreference::class);
+    }
+
+    public function timezonePreferences(): HasOne
+    {
+        return $this->hasOne(TimezonePreference::class);
+    }
 }

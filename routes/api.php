@@ -11,6 +11,7 @@ use App\Http\Controllers\ContestController;
 use App\Http\Controllers\ContestEntryController;
 use App\Http\Controllers\ContestEntryVoteController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LanguagePreferenceController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentMethodController;
@@ -22,6 +23,7 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SearchHistoryController;
 use App\Http\Controllers\SellerInfoController;
 use App\Http\Controllers\UserAccountController;
+use App\Http\Controllers\UserPreference;
 use App\Http\Controllers\WishListController;
 use App\Models\User;
 use App\Services\NotificationService;
@@ -186,3 +188,8 @@ Route::delete('/payment-method/{payment_method_id}', [PaymentMethodController::c
 Route::get('/account-overview', [UserAccountController::class, 'accountOverView']);
 Route::patch('/account-overview-update-user-info', [UserAccountController::class, 'updateUserInfo']);
 Route::patch('/account-overview-update-user-notification', [UserAccountController::class, 'updateUserNotification']);
+
+//user preference routes
+Route::post('/language-preference', [UserPreference::class, 'storeAndUpdateLanguagePreference']);
+Route::post('/currency-preference', [UserPreference::class, 'storeAndUpdateCurrencyPreference']);
+Route::post('/timezone-preference', [UserPreference::class, 'storeAndUpdateTimezonePreference']);
