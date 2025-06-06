@@ -6,6 +6,7 @@ namespace App\Models;
 use App\Notifications\CustomVerifyEmail;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -181,5 +182,12 @@ class User extends Authenticatable implements HasMedia
     public function getRatingCountAttribute()
     {
         return $this->reviewsReceived()->where('is_approved', true)->count();
+    }
+
+    public function coupons(): BelongsToMany
+    {
+        return $this->belongsToMany(Coupon::class, 'coupon_user')
+            ->withPivot('order_id', 'discount_amount')
+            ->withTimestamps();
     }
 }

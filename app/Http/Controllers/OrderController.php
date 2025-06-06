@@ -3,12 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Services\DiscountService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
+    protected $discountService;
+
+    public function __construct(DiscountService $discountService)
+    {
+        $this->discountService = $discountService;
+    }
+
     public function index(Request $request)
     {
         $user = Auth::guard('sanctum')->user();
@@ -60,16 +68,6 @@ class OrderController extends Controller
         }
     }
 
-
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
     /**
      * Store a newly created resource in storage.
      */
@@ -85,6 +83,7 @@ class OrderController extends Controller
             'shipping_address_id' => 'required|exists:addresses,id',
             'billing_address_id' => 'nullable|exists:addresses,id',
             'payment_method' => 'required|in:online,offline',
+            'coupon_code' => 'nullable|string|exists:coupons,code',
         ]);
 
         $cart = $user->cart;
@@ -99,10 +98,36 @@ class OrderController extends Controller
             return apiResponse(false, 'Cart is empty. Add products before placing an order.', [], null, 400);
         }
 
-        // Calculate total
-        $totalAmount = $cartItems->sum(function ($item) {
+        // Calculate subtotal
+        $subtotal = $cartItems->sum(function ($item) {
             return $item->product->price * $item->quantity;
         });
+
+        // Initialize discount variables
+        $discountAmount = 0;
+        $couponId = null;
+        $finalAmount = $subtotal;
+
+        // Apply coupon if provided
+        if (isset($validated['coupon_code'])) {
+            $coupon = Coupon::where('code', $validated['coupon_code'])->first();
+
+            // Validate coupon
+            $validation = $this->discountService->validateCouponForUser($coupon, $user->id, $subtotal);
+
+            if (!$validation['valid']) {
+                return apiResponse(false, $validation['message'], [], null, 422);
+            }
+
+            // Calculate discount
+            $discountResult = $this->discountService->calculateDiscount($cart, $coupon);
+
+            if ($discountResult['success']) {
+                $discountAmount = $discountResult['discount'];
+                $finalAmount = $discountResult['final_amount'];
+                $couponId = $coupon->id;
+            }
+        }
 
         // Start DB transaction
         DB::beginTransaction();
@@ -116,7 +141,10 @@ class OrderController extends Controller
                 'payment_method' => $validated['payment_method'],
                 'payment_status' => 'unpaid',
                 'status' => 'pending',
-                'total_amount' => $totalAmount,
+                'subtotal' => $subtotal,
+                'discount_amount' => $discountAmount,
+                'final_amount' => $finalAmount,
+                'coupon_id' => $couponId,
             ]);
 
             // Create OrderItems
@@ -128,13 +156,24 @@ class OrderController extends Controller
                 ]);
             }
 
+            // Record coupon usage if applied
+            if ($couponId) {
+                $user->coupons()->attach($couponId, [
+                    'order_id' => $order->id,
+                    'discount_amount' => $discountAmount,
+                ]);
+
+                // Increment used_count
+                $coupon->increment('used_count');
+            }
+
             // Clear user's cart
             $cart->cartItems()->delete();
 
             DB::commit();
 
             return apiResponse(true, 'Order placed successfully!',
-                $order->load('items'), 'order', 200);
+                $order->load('items', 'coupon'), 'order', 200);
         } catch (\Exception $e) {
             DB::rollBack();
 

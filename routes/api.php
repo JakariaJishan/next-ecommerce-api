@@ -10,6 +10,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ContestController;
 use App\Http\Controllers\ContestEntryController;
 use App\Http\Controllers\ContestEntryVoteController;
+use App\Http\Controllers\CouponController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LanguagePreferenceController;
 use App\Http\Controllers\NotificationController;
@@ -214,4 +215,18 @@ Route::prefix('reviews')->group(function () {
     Route::put('/users/{id}', [UserReviewController::class, 'update']);
     Route::delete('/users/{id}', [UserReviewController::class, 'destroy']);
     Route::get('/users/summary/{userId}', [UserReviewController::class, 'userRatingSummary']);
+});
+
+// Coupon routes (admin)
+Route::middleware(['auth:sanctum', 'can:manage coupons'])->group(function () {
+    Route::get('/admin/coupons', [CouponController::class, 'index']);
+    Route::post('/admin/coupons', [CouponController::class, 'store']);
+    Route::get('/admin/coupons/{id}', [CouponController::class, 'show']);
+    Route::put('/admin/coupons/{id}', [CouponController::class, 'update']);
+    Route::delete('/admin/coupons/{id}', [CouponController::class, 'destroy']);
+});
+
+// Coupon validation (customer)
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/coupons/validate', [CouponController::class, 'validate']);
 });
