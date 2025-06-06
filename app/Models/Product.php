@@ -63,6 +63,7 @@ class Product extends Model implements HasMedia
     {
         return $this->hasOne(Inventory::class);
     }
+
     public function cartItems(): HasMany
     {
         return $this->hasMany(CartItem::class);
@@ -71,6 +72,21 @@ class Product extends Model implements HasMedia
     public function wishLists(): HasMany
     {
         return $this->hasMany(WishList::class);
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(ProductReview::class);
+    }
+
+    public function getAverageRatingAttribute()
+    {
+        return $this->reviews()->where('is_approved', true)->avg('rating') ?: 0;
+    }
+
+    public function getRatingCountAttribute()
+    {
+        return $this->reviews()->where('is_approved', true)->count();
     }
 
 

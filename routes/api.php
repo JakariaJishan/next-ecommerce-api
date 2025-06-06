@@ -17,6 +17,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProductReviewController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SearchController;
@@ -24,6 +25,7 @@ use App\Http\Controllers\SearchHistoryController;
 use App\Http\Controllers\SellerInfoController;
 use App\Http\Controllers\UserAccountController;
 use App\Http\Controllers\UserPreference;
+use App\Http\Controllers\UserReviewController;
 use App\Http\Controllers\WishListController;
 use App\Models\User;
 use App\Services\NotificationService;
@@ -193,3 +195,23 @@ Route::patch('/account-overview-update-user-notification', [UserAccountControlle
 Route::post('/language-preference', [UserPreference::class, 'storeAndUpdateLanguagePreference']);
 Route::post('/currency-preference', [UserPreference::class, 'storeAndUpdateCurrencyPreference']);
 Route::post('/timezone-preference', [UserPreference::class, 'storeAndUpdateTimezonePreference']);
+
+// Product Reviews routes
+Route::prefix('reviews')->group(function () {
+    Route::get('/products', [ProductReviewController::class, 'index']);
+    Route::post('/product', [ProductReviewController::class, 'store']);
+    Route::get('/product/{id}', [ProductReviewController::class, 'show']);
+    Route::put('/product/{id}', [ProductReviewController::class, 'update']);
+    Route::delete('/product/{id}', [ProductReviewController::class, 'destroy']);
+    Route::get('/products/summary/{productId}', [ProductReviewController::class, 'productRatingSummary']);
+});
+
+// User Reviews routes
+Route::prefix('reviews')->group(function () {
+    Route::get('/users', [UserReviewController::class, 'index']);
+    Route::post('/users', [UserReviewController::class, 'store']);
+    Route::get('/users/{id}', [UserReviewController::class, 'show']);
+    Route::put('/users/{id}', [UserReviewController::class, 'update']);
+    Route::delete('/users/{id}', [UserReviewController::class, 'destroy']);
+    Route::get('/users/summary/{userId}', [UserReviewController::class, 'userRatingSummary']);
+});

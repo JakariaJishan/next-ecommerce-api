@@ -157,4 +157,29 @@ class User extends Authenticatable implements HasMedia
     {
         return $this->hasOne(TimezonePreference::class);
     }
+
+    public function productReviews(): HasMany
+    {
+        return $this->hasMany(ProductReview::class);
+    }
+
+    public function reviewsWritten(): HasMany
+    {
+        return $this->hasMany(UserReview::class, 'reviewer_id');
+    }
+
+    public function reviewsReceived(): HasMany
+    {
+        return $this->hasMany(UserReview::class, 'reviewed_user_id');
+    }
+
+    public function getAverageRatingAttribute()
+    {
+        return $this->reviewsReceived()->where('is_approved', true)->avg('rating') ?: 0;
+    }
+
+    public function getRatingCountAttribute()
+    {
+        return $this->reviewsReceived()->where('is_approved', true)->count();
+    }
 }
