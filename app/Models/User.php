@@ -6,6 +6,7 @@ namespace App\Models;
 use App\Notifications\CustomVerifyEmail;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -28,7 +29,8 @@ class User extends Authenticatable implements HasMedia
      * @var list<string>
      */
     protected $fillable = [
-        'name',
+        'first_name',
+        'last_name',
         'email',
         'password',
         'bio',
@@ -36,6 +38,8 @@ class User extends Authenticatable implements HasMedia
         'phone',
         'avatar',
         'google_id',
+        'gender',
+        'date_of_birth',
     ];
 
     /**
@@ -61,6 +65,7 @@ class User extends Authenticatable implements HasMedia
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'date_of_birth' => 'datetime',
         ];
     }
 
@@ -117,5 +122,72 @@ class User extends Authenticatable implements HasMedia
     public function addresses()
     {
         return $this->hasMany(Address::class);
+    }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    public function wishLists(): HasMany
+    {
+        return $this->hasMany(WishList::class);
+    }
+
+    public function paymentMethods()
+    {
+        return $this->hasMany(PaymentMethod::class);
+    }
+
+    public function userNotifications(): Hasone
+    {
+        return $this->hasOne(UserNotification::class);
+    }
+
+    public function languagePreferences(): HasOne
+    {
+        return $this->hasOne(LanguagePreference::class);
+    }
+
+    public function currencyPreferences(): HasOne
+    {
+        return $this->hasOne(CurrencyPreference::class);
+    }
+
+    public function timezonePreferences(): HasOne
+    {
+        return $this->hasOne(TimezonePreference::class);
+    }
+
+    public function productReviews(): HasMany
+    {
+        return $this->hasMany(ProductReview::class);
+    }
+
+    public function reviewsWritten(): HasMany
+    {
+        return $this->hasMany(UserReview::class, 'reviewer_id');
+    }
+
+    public function reviewsReceived(): HasMany
+    {
+        return $this->hasMany(UserReview::class, 'reviewed_user_id');
+    }
+
+    public function getAverageRatingAttribute()
+    {
+        return $this->reviewsReceived()->where('is_approved', true)->avg('rating') ?: 0;
+    }
+
+    public function getRatingCountAttribute()
+    {
+        return $this->reviewsReceived()->where('is_approved', true)->count();
+    }
+
+    public function coupons(): BelongsToMany
+    {
+        return $this->belongsToMany(Coupon::class, 'coupon_user')
+            ->withPivot('order_id', 'discount_amount')
+            ->withTimestamps();
     }
 }

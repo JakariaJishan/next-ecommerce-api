@@ -19,4 +19,14 @@ class Address extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function billingOrders()
+    {
+        return $this->hasMany(Order::class, 'billing_address_id');
+    }
+
+    public function shippingOrders()
+    {
+        return $this->hasMany(Order::class, 'shipping_address_id');
+    }
 }

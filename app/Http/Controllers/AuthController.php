@@ -30,7 +30,8 @@ class AuthController extends Controller
         try {
             // Validate user inputs
             $fields = $request->validate([
-                'full_name' => 'required|string|max:20',
+                'first_name' => 'required|string|max:20',
+                'last_name' => 'required|string|max:20',
                 'email' => 'required|string|email|max:255|unique:users',
                 'password' => 'required|string|min:6|confirmed',
                 'phone' => 'nullable|string|unique:users',
@@ -39,13 +40,16 @@ class AuthController extends Controller
 
             // Create the user
             $user = User::create([
-                'full_name' => $fields['full_name'],
+                'first_name' => $fields['first_name'],
+                'last_name' => $fields['last_name'],
                 'email' => $fields['email'],
                 'password' => Hash::make($fields['password']),
             ]);
 
             // Assign "user" role
             $user->assignRole('user');
+
+            $user->userNotifications()->create();
 
             // Generate a custom email verification token
             $rawToken = Str::random(64); // Raw token for the verification link
@@ -429,54 +433,6 @@ class AuthController extends Controller
 
             // Return a success response
             return apiResponse(true, 'Verification email resent successfully. Please check your email.', [], null);
-
-        } catch (\Exception $e) {
-            return ApiResponseService::handleException($e, $request->all());
-        }
-    }
-
-    /**
-     * @operationId User update user info
-     */
-    public function updateUserInfo(Request $request)
-    {
-        try {
-            // Check if the user is authenticated
-            $user = Auth::guard('sanctum')->user();
-            if (!$user) {
-                return apiResponse(false, 'Unauthenticated.', [], null, 401);
-            }
-
-            // Validate the request
-            $validated = $request->validate([
-                'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120', // Max 5MB
-                'current_password' => 'required|string',
-            ]);
-
-            // Verify the current password
-            if (!Hash::check($request->current_password, $user->password)) {
-                return apiResponse(false, 'Incorrect current password.', [], null, 401);
-            }
-
-            // Handle avatar upload with Spatie Media Library
-            if ($request->hasFile('avatar')) {
-                // Remove old avatar if exists
-                $user->clearMediaCollection('avatars');
-
-                // Upload new avatar and store it in the 'avatars' collection
-                $user->addMedia($request->file('avatar'))
-                    ->toMediaCollection('avatars');
-            }
-
-            // Save any other user changes (if applicable)
-            $user->save();
-
-            // Return success response with updated user info, including media
-            return apiResponse(true, 'User information updated successfully.',
-                $user->load('media'), // Load the media relationship
-                'user',
-                200
-            );
 
         } catch (\Exception $e) {
             return ApiResponseService::handleException($e, $request->all());

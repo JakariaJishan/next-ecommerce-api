@@ -10,15 +10,24 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ContestController;
 use App\Http\Controllers\ContestEntryController;
 use App\Http\Controllers\ContestEntryVoteController;
+use App\Http\Controllers\CouponController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LanguagePreferenceController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProductReviewController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SearchHistoryController;
 use App\Http\Controllers\SellerInfoController;
+use App\Http\Controllers\UserAccountController;
+use App\Http\Controllers\UserPreference;
+use App\Http\Controllers\UserReviewController;
+use App\Http\Controllers\WishListController;
 use App\Models\User;
 use App\Services\NotificationService;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
@@ -150,14 +159,74 @@ Route::prefix('cart')->group(function () {
 });
 
 //addresses routes
-// Save both billing and shipping addresses
 Route::post('/checkout/addresses', [AddressController::class, 'store']);
 
-// (Optional) Retrieve previously used addresses by the user
 Route::get('/checkout/addresses', [AddressController::class, 'index']);
 
-// (Optional) Update address before confirming order
 Route::patch('/checkout/addresses/{id}', [AddressController::class, 'update']);
 
-// (Optional) Delete address (e.g., from checkout if user wants to remove it)
 Route::delete('/checkout/addresses/{id}', [AddressController::class, 'destroy']);
+
+// Orders routes
+Route::get('/orders', [OrderController::class, 'index']);
+Route::get('/order/{order_id}', [OrderController::class, 'show']);
+Route::post('/orders', [OrderController::class, 'store']);
+//Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel']);
+
+// Payments
+//Route::post('/orders/{order}/pay', [PaymentController::class, 'pay']);
+
+//wishlist routes
+Route::post('/wishlist', [WishlistController::class, 'store']);
+Route::get('/wishlists', [WishlistController::class, 'index']);
+Route::delete('/wishlist/{product_id}', [WishlistController::class, 'destroy']);
+
+//payment methods routes
+Route::get('/payment-methods', [PaymentMethodController::class, 'index']);
+Route::post('/payment-method', [PaymentMethodController::class, 'store']);
+Route::patch('/payment-method/{payment_method_id}', [PaymentMethodController::class, 'update']);
+Route::delete('/payment-method/{payment_method_id}', [PaymentMethodController::class, 'destroy']);
+
+//user(my account) account routes
+Route::get('/account-overview', [UserAccountController::class, 'accountOverView']);
+Route::patch('/account-overview-update-user-info', [UserAccountController::class, 'updateUserInfo']);
+Route::patch('/account-overview-update-user-notification', [UserAccountController::class, 'updateUserNotification']);
+
+//user preference routes
+Route::post('/language-preference', [UserPreference::class, 'storeAndUpdateLanguagePreference']);
+Route::post('/currency-preference', [UserPreference::class, 'storeAndUpdateCurrencyPreference']);
+Route::post('/timezone-preference', [UserPreference::class, 'storeAndUpdateTimezonePreference']);
+
+// Product Reviews routes
+Route::prefix('reviews')->group(function () {
+    Route::get('/products', [ProductReviewController::class, 'index']);
+    Route::post('/product', [ProductReviewController::class, 'store']);
+    Route::get('/product/{id}', [ProductReviewController::class, 'show']);
+    Route::put('/product/{id}', [ProductReviewController::class, 'update']);
+    Route::delete('/product/{id}', [ProductReviewController::class, 'destroy']);
+    Route::get('/products/summary/{productId}', [ProductReviewController::class, 'productRatingSummary']);
+});
+
+// User Reviews routes
+Route::prefix('reviews')->group(function () {
+    Route::get('/users', [UserReviewController::class, 'index']);
+    Route::post('/users', [UserReviewController::class, 'store']);
+    Route::get('/users/{id}', [UserReviewController::class, 'show']);
+    Route::put('/users/{id}', [UserReviewController::class, 'update']);
+    Route::delete('/users/{id}', [UserReviewController::class, 'destroy']);
+    Route::get('/users/summary/{userId}', [UserReviewController::class, 'userRatingSummary']);
+});
+
+// Coupon routes (admin)
+Route::middleware(['auth:sanctum', 'can:manage coupons'])->group(function () {
+    Route::get('/admin/coupons', [CouponController::class, 'index']);
+    Route::post('/admin/coupons', [CouponController::class, 'store']);
+    Route::get('/admin/coupons/{id}', [CouponController::class, 'show']);
+    Route::put('/admin/coupons/{id}', [CouponController::class, 'update']);
+    Route::delete('/admin/coupons/{id}', [CouponController::class, 'destroy']);
+});
+
+// Coupon validation (customer)
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/coupons/validate', [CouponController::class, 'validate']);
+});
