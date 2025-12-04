@@ -1,13 +1,20 @@
 <?php
 
 use App\Http\Controllers\AdminController;
-use App\Http\Controllers\AdsController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BlogPostController;
 use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\ContestController;
-use App\Http\Controllers\ContestEntryController;
-use App\Http\Controllers\ContestEntryVoteController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\WishlistController;
+use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\ShippingController;
+use App\Http\Controllers\CouponController;
+use App\Http\Controllers\UserProfileController;
+// Removed Ads and Contest controllers for marketplace focus
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PermissionController;
@@ -79,8 +86,7 @@ Route::patch('/reset-password', [AuthController::class, 'resetPassword']);
 //categories routes
 Route::resource('categories', CategoryController::class)->except(['create', 'edit']);
 
-//ads routes
-Route::resource('ads', AdsController::class)->except(['create', 'edit']);
+// ads routes removed
 
 //blog posts routes
 Route::resource('blog-posts', BlogPostController::class)->except(['create', 'edit']);
@@ -96,16 +102,13 @@ Route::resource('search-histories', SearchHistoryController::class)
 Route::resource('reports', ReportController::class)->only(['index', 'store', 'show', 'update']);
 
 //contest routes
-Route::resource('contests', ContestController::class)
-    ->except(['create', 'edit']);
+// contest routes removed
 
 //contest entry route
-Route::resource('contests-entries', ContestEntryController::class)
-    ->only(['index', 'store']);
+// contest entry routes removed
 
 //contest entry vote route
-Route::resource('contests-entries-votes', ContestEntryVoteController::class)
-    ->only(['index']);
+// contest entry vote routes removed
 
 //seller info route
 //Route::resource('seller-infos', SellerInfoController::class)
@@ -124,7 +127,58 @@ Route::resource('admins', AdminController::class)->except(['create', 'edit']);;
 
 //dashboard routes
 Route::get('dashboards/summary', [DashboardController::class, 'dashboardSummary']);
-Route::get('dashboards/top-sold-ads', [DashboardController::class, 'topSoldAds']);
+Route::get('dashboards/top-sold-products', [DashboardController::class, 'topSoldProducts']);
+
+// product routes
+Route::resource('products', ProductController::class)->except(['create', 'edit']);
+
+// cart routes
+Route::get('cart', [CartController::class, 'show']);
+Route::post('cart/items', [CartController::class, 'addItem']);
+Route::patch('cart/items/{cartItem}', [CartController::class, 'updateItem']);
+Route::delete('cart/items/{cartItem}', [CartController::class, 'removeItem']);
+Route::delete('cart/clear', [CartController::class, 'clear']);
+
+// order routes
+Route::get('orders', [OrderController::class, 'index']);
+Route::post('orders', [OrderController::class, 'store']);
+Route::get('orders/{order}', [OrderController::class, 'show']);
+Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus']);
+Route::post('orders/{order}/cancel', [OrderController::class, 'cancel']);
+
+// payment routes
+Route::get('payments', [PaymentController::class, 'index']);
+Route::post('payments', [PaymentController::class, 'store']);
+Route::get('payments/{payment}', [PaymentController::class, 'show']);
+Route::post('payments/{payment}/capture', [PaymentController::class, 'capture']);
+Route::post('payments/webhook', [PaymentController::class, 'webhook']);
+
+// reviews
+Route::resource('reviews', ReviewController::class)->except(['create', 'edit']);
+
+// wishlist
+Route::get('wishlists', [WishlistController::class, 'index']);
+Route::post('wishlists', [WishlistController::class, 'store']);
+Route::delete('wishlists/{wishlist}', [WishlistController::class, 'destroy']);
+
+// inventory
+Route::get('inventory/{productId}', [InventoryController::class, 'show']);
+Route::put('inventory/{productId}', [InventoryController::class, 'set']);
+Route::patch('inventory/{productId}', [InventoryController::class, 'adjust']);
+
+// shipping
+Route::get('shipping/methods', [ShippingController::class, 'methodsIndex']);
+Route::post('shipping/methods', [ShippingController::class, 'methodsStore']);
+Route::get('shipments', [ShippingController::class, 'shipmentsIndex']);
+Route::post('shipments', [ShippingController::class, 'shipmentsStore']);
+Route::patch('shipments/{shipment}', [ShippingController::class, 'shipmentsUpdate']);
+
+// coupons
+Route::resource('coupons', CouponController::class)->except(['create', 'edit']);
+
+// user profile
+Route::get('me', [UserProfileController::class, 'show']);
+Route::patch('me', [UserProfileController::class, 'update']);
 
 //notifications routes
 Route::resource('notifications', NotificationController::class)->except(['create', 'edit']);

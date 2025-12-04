@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Ads;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -33,13 +32,13 @@ class DashboardController extends Controller
                 $query->where('name', 'user');
             })->count();
 
-            // Count total ads
-            $totalAds = DB::table('ads')->count();
+            // Count total products
+            $totalProducts = DB::table('products')->count();
 
-            // Calculate total income from sold ads
-            $totalIncome = DB::table('ads')
-                ->where('status', 'sold')
-                ->sum('price');
+            // Calculate total income from paid orders
+            $totalIncome = DB::table('orders')
+                ->where('payment_status', 'paid')
+                ->sum('grand_total');
 
             // Get users created per month (based on created_at)
             $usersByMonth = User::whereHas('roles', function ($query) {
@@ -52,8 +51,8 @@ class DashboardController extends Controller
                 ->groupBy('month_number')
                 ->get();
 
-            // Get ads posted per month (based on created_at) for line chart
-            $adsByMonth = DB::table('ads')
+            // Get products created per month (based on created_at) for line chart
+            $productsByMonth = DB::table('products')
                 ->select(
                     DB::raw('MONTH(created_at) as month_number'),
                     DB::raw('COUNT(*) as count') // Changed to 'count'
@@ -61,13 +60,13 @@ class DashboardController extends Controller
                 ->groupBy('month_number')
                 ->get();
 
-            // Get income per month (sum of price for sold ads based on updated_at)
-            $incomeByMonth = DB::table('ads')
+            // Get income per month from paid orders (based on updated_at)
+            $incomeByMonth = DB::table('orders')
                 ->select(
                     DB::raw('MONTH(updated_at) as month_number'),
-                    DB::raw('ROUND(SUM(price), 2) as count') // Changed to 'count' (still rounded for income)
+                    DB::raw('ROUND(SUM(grand_total), 2) as count') // Changed to 'count' (still rounded for income)
                 )
-                ->where('status', 'sold')
+                ->where('payment_status', 'paid')
                 ->groupBy('month_number')
                 ->get();
 
@@ -96,19 +95,19 @@ class DashboardController extends Controller
                 }
             }
 
-            // Initialize chart_data for total_ads
-            $adsChartData = array_map(function ($monthName) {
+            // Initialize chart_data for total_products
+            $productsChartData = array_map(function ($monthName) {
                 return [
                     'month' => $monthName,
                     'count' => 0 // Changed to 'count'
                 ];
             }, $monthsForLineChart);
 
-            // Fill in the actual ads counts
-            foreach ($adsByMonth as $record) {
+            // Fill in the actual products counts
+            foreach ($productsByMonth as $record) {
                 $monthIndex = $record->month_number - 1;
-                if (isset($adsChartData[$monthIndex])) {
-                    $adsChartData[$monthIndex]['count'] = $record->count;
+                if (isset($productsChartData[$monthIndex])) {
+                    $productsChartData[$monthIndex]['count'] = $record->count;
                 }
             }
 
@@ -128,27 +127,27 @@ class DashboardController extends Controller
                 }
             }
 
-            // Get total ads posted per month (based on created_at) for barChart
-            $adsPostedByMonth = DB::table('ads')
+            // Get total products created per month (based on created_at) for barChart
+            $productsPostedByMonth = DB::table('products')
                 ->select(
                     DB::raw('MONTH(created_at) as month_number'),
-                    DB::raw('COUNT(*) as ads_count')
+                    DB::raw('COUNT(*) as products_count')
                 )
                 ->groupBy('month_number')
                 ->get()
-                ->pluck('ads_count', 'month_number')
+                ->pluck('products_count', 'month_number')
                 ->toArray();
 
-            // Get sold ads per month (based on updated_at) for barChart
-            $soldAdsByMonthForBarChart = DB::table('ads')
+            // Get paid orders per month (based on updated_at) for barChart
+            $paidOrdersByMonthForBarChart = DB::table('orders')
                 ->select(
                     DB::raw('MONTH(updated_at) as month_number'),
-                    DB::raw('COUNT(*) as sold_count')
+                    DB::raw('COUNT(*) as paid_count')
                 )
-                ->where('status', 'sold')
+                ->where('payment_status', 'paid')
                 ->groupBy('month_number')
                 ->get()
-                ->pluck('sold_count', 'month_number')
+                ->pluck('paid_count', 'month_number')
                 ->toArray();
 
             // Define all months for barChart
@@ -168,11 +167,11 @@ class DashboardController extends Controller
             ];
 
             // Initialize result array for barChart
-            $barChart = array_map(function ($monthName, $monthNumber) use ($adsPostedByMonth, $soldAdsByMonthForBarChart) {
+            $barChart = array_map(function ($monthName, $monthNumber) use ($productsPostedByMonth, $paidOrdersByMonthForBarChart) {
                 return [
                     'month' => $monthName,
-                    'ads' => isset($adsPostedByMonth[$monthNumber]) ? (int)$adsPostedByMonth[$monthNumber] : 0,
-                    'ads_sold' => isset($soldAdsByMonthForBarChart[$monthNumber]) ? (int)$soldAdsByMonthForBarChart[$monthNumber] : 0
+                    'products' => isset($productsPostedByMonth[$monthNumber]) ? (int)$productsPostedByMonth[$monthNumber] : 0,
+                    'orders_paid' => isset($paidOrdersByMonthForBarChart[$monthNumber]) ? (int)$paidOrdersByMonthForBarChart[$monthNumber] : 0
                 ];
             }, $monthsForBarChart, array_keys($monthsForBarChart));
 
@@ -185,9 +184,9 @@ class DashboardController extends Controller
                         'chart_data' => array_values($usersChartData)
                     ],
                     [
-                        'label' => 'total ads',
-                        'total' => $totalAds, // Changed to 'total'
-                        'chart_data' => array_values($adsChartData)
+                        'label' => 'total products',
+                        'total' => $totalProducts, // Changed to 'total'
+                        'chart_data' => array_values($productsChartData)
                     ],
                     [
                         'label' => 'total income',
@@ -207,9 +206,9 @@ class DashboardController extends Controller
     }
 
     /**
-     * @operationId Top sold ads
+     * @operationId Top sold products
      */
-    public function topSoldAds()
+    public function topSoldProducts()
     {
         try {
             // Authenticate the user via Sanctum
@@ -224,25 +223,23 @@ class DashboardController extends Controller
                 return apiResponse(false, 'Unauthorized: Only admins can view dashboard data.', [], null);
             }
 
-            // Get sold ads with media and user details using Eloquent
-            $soldAds = Ads::with([
-                'media', // Ad media
-                'user.media' // User and their media
-            ])
-                ->where('status', 'sold')
-                ->orderBy('updated_at', 'desc')
+            // Top sold products based on order_items quantity
+            $topProducts = DB::table('order_items')
+                ->join('products', 'order_items.product_id', '=', 'products.id')
+                ->select('products.*', DB::raw('SUM(order_items.quantity) as total_sold'))
+                ->groupBy('products.id')
+                ->orderByDesc('total_sold')
                 ->limit(6)
                 ->get();
 
-            // Prepare the data
             $data = [
-                'top_sold_ads' => $soldAds
+                'top_sold_products' => $topProducts
             ];
 
             // Return the data
-            return apiResponse(true, 'Top sold ads retrieved successfully.', $data, null, 200);
+            return apiResponse(true, 'Top sold products retrieved successfully.', $data, null, 200);
         } catch (\Exception $e) {
-            return apiResponse(false, 'An error occurred while retrieving top sold ads.',
+            return apiResponse(false, 'An error occurred while retrieving top sold products.',
                 $e->getMessage(), 'error');
         }
     }
